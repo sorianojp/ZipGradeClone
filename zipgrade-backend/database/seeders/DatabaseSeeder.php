@@ -18,21 +18,22 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Create a Test User
-        $user = User::factory()->create([
-            'name' => 'Test Teacher',
-            'email' => 'teacher@example.com',
-            'password' => Hash::make('password'),
-        ]);
+        // 1. Create or Get Test User
+        $user = User::firstOrCreate(
+            ['email' => 'teacher@example.com'],
+            [
+                'name' => 'Test Teacher',
+                'password' => Hash::make('password'),
+            ]
+        );
 
-        $this->command->info('User created: teacher@example.com / password');
+        $this->command->info('User: teacher@example.com / password');
 
-        // 2. Create a Classroom
-        $classroom = Classroom::create([
-            'user_id' => $user->id,
-            'name' => 'Math 101',
-            'section' => 'A',
-        ]);
+        // 2. Create Classroom
+        $classroom = Classroom::firstOrCreate(
+            ['name' => 'Math 101', 'user_id' => $user->id],
+            ['section' => 'A']
+        );
 
         // 3. Create Students and attach to Classroom
         $students = Student::factory(5)->create();
@@ -40,28 +41,7 @@ class DatabaseSeeder extends Seeder
 
         $this->command->info('Classroom "Math 101" created with 5 students.');
 
-        // 4. Create an Exam
-        $exam = Exam::create([
-            'user_id' => $user->id,
-            'name' => 'Midterm Exam',
-            'date' => now(),
-            'omr_code' => '20',
-        ]);
-
-        // 5. Create Questions for the Exam
-        $questions = [];
-        $answers = ['A', 'B', 'C', 'D', 'E'];
-        
-        for ($i = 1; $i <= 20; $i++) {
-            $questions[] = [
-                'question_number' => $i,
-                'correct_answer' => $answers[array_rand($answers)], // Random answer
-                'points' => 1,
-            ];
-        }
-        
-        $exam->questions()->createMany($questions);
-
-        $this->command->info('Exam "Midterm Exam" created with 20 questions.');
+        // 4. Run Exam Seeder
+        $this->call(ExamSeeder::class);
     }
 }

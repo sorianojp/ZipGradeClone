@@ -117,7 +117,8 @@ def process_omr(image_path, num_questions=20):
 	                                   cv2.THRESH_BINARY_INV, 15, 2)
 
         # Find Bubbles
-        cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Use RETR_LIST to find all contours, including nested ones (bubbles inside the border)
+        cnts = cv2.findContours(thresh.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         cnts = cnts[0] if len(cnts) == 2 else cnts[1]
         questionCnts = []
 
@@ -138,37 +139,82 @@ def process_omr(image_path, num_questions=20):
         if len(questionCnts) == 0:
              return {"error": "No answer bubbles detected. Try closer or better lighting."}
 
+        # Filter out inner contours (letters inside bubbles)
+        # Strategy: If a contour A is inside contour B, keep B, discard A.
+        
+        questionCnts = sorted(questionCnts, key=cv2.contourArea, reverse=True)
+        final_cnts = []
+        
+        for i, c in enumerate(questionCnts):
+            is_inner = False
+            (x, y, w, h) = cv2.boundingRect(c)
+            center_x = x + w // 2
+            center_y = y + h // 2
+            
+            for other_c in final_cnts:
+                # Check if center of 'c' is inside 'other_c'
+                if cv2.pointPolygonTest(other_c, (center_x, center_y), False) >= 0:
+                    is_inner = True
+                    break
+            
+            if not is_inner:
+                final_cnts.append(c)
+        
+        questionCnts = final_cnts
+
+        if len(questionCnts) > 0:
+            areas = [cv2.contourArea(c) for c in questionCnts]
+            median_area = np.median(areas)
+            # Keep contours within reasonable range of median (filter outliers)
+            questionCnts = [c for c in questionCnts if 0.5 * median_area < cv2.contourArea(c) < 2.0 * median_area]
+
         # Sort contours
         (questionCnts, _) = sort_contours(questionCnts, method="top-to-bottom")
 
-        # Split columns
-        mid_x = w_img // 2
-        left_cnts = []
-        right_cnts = []
-        for c in questionCnts:
-            (x, y, w, h) = cv2.boundingRect(c)
-            if x < mid_x:
-                left_cnts.append(c)
-            else:
-                right_cnts.append(c)
+        # Dynamic Column Detection
+        # Group contours by X-coordinate to determine columns
+        # We can use a simple threshold approach since columns are well-separated.
         
-        (left_cnts, _) = sort_contours(left_cnts, method="top-to-bottom") if len(left_cnts) > 0 else ([], [])
-        (right_cnts, _) = sort_contours(right_cnts, method="top-to-bottom") if len(right_cnts) > 0 else ([], [])
+        # Sort by X first
+        questionCnts = sorted(questionCnts, key=lambda c: cv2.boundingRect(c)[0])
         
+        columns = []
+        if len(questionCnts) > 0:
+            current_col = [questionCnts[0]]
+            last_x = cv2.boundingRect(questionCnts[0])[0]
+            
+            for i in range(1, len(questionCnts)):
+                c = questionCnts[i]
+                x = cv2.boundingRect(c)[0]
+                # If x gap is large (> 50px typically for columns), start new column
+                if abs(x - last_x) > 40: 
+                    columns.append(current_col)
+                    current_col = [c]
+                else:
+                    current_col.append(c)
+                last_x = x # Update last_x to current (or could keep cluster center)
+            columns.append(current_col)
+
         choices = ['A', 'B', 'C', 'D', 'E']
         real_results = []
+        current_question_num = 1
         
-        def process_column(cnts, start_q_num):
-            current_q = start_q_num
-            # We assume bubbles come in clean rows of 5.
-            # If noise is detected, this breaks.
-            # Robust Logic: Group by Y-coord using a threshold
+        for col_cnts in columns:
+            # unique sort for this column top-to-bottom
+            (col_cnts, _) = sort_contours(col_cnts, method="top-to-bottom")
+            
+            # Process this column
+            # Logic from process_column embedded here or called
+            
+            # Helper function logic:
+            cnts = col_cnts
+            start_q_num = current_question_num
             
             rows = []
-            if not cnts: return
+            if not cnts: continue
 
             # Simple grouping by Y
-            cnts = sorted(cnts, key=lambda c: cv2.boundingRect(c)[1]) # Sort by Y
+            # cnts is already sorted top-to-bottom
             
             current_row = [cnts[0]]
             last_y = cv2.boundingRect(cnts[0])[1]
@@ -176,7 +222,7 @@ def process_omr(image_path, num_questions=20):
             for i in range(1, len(cnts)):
                 c = cnts[i]
                 y = cv2.boundingRect(c)[1]
-                if abs(y - last_y) < 20: # Same row threshold (20px)
+                if abs(y - last_y) < 20: # Same row threshold
                     current_row.append(c)
                 else:
                     rows.append(current_row)
@@ -184,16 +230,13 @@ def process_omr(image_path, num_questions=20):
                     last_y = y
             rows.append(current_row) # Add last row
 
+            processed_count = 0
             for row in rows:
                 if len(row) < 5: 
-                    # Visual debug: draw yellow for skipped/incomplete rows
                     cv2.drawContours(output_img, row, -1, (0, 255, 255), 2)
                     continue 
 
-                # Sort row L-R
                 (row, _) = sort_contours(row, method="left-to-right")
-                
-                # Check top 5 only (in case noise added 6th bubble)
                 row = row[:5]
                 
                 bubbled = None
@@ -205,29 +248,22 @@ def process_omr(image_path, num_questions=20):
                     mask = cv2.bitwise_and(thresh, thresh, mask=mask)
                     total = cv2.countNonZero(mask)
                     
-                    # Highlight filled bubble logic
                     if total > max_pixels:
                         max_pixels = total
                         bubbled = k
-                    
-                    # Debug: Green text for total
-                    # cv2.putText(output_img, str(total), (cv2.boundingRect(c)[0], cv2.boundingRect(c)[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 255, 0), 1)
 
                 choice = choices[bubbled] if bubbled is not None else ""
                 
-                # Highlight the chosen bubble in Green on debug image
                 if bubbled is not None:
                      cv2.drawContours(output_img, [row[bubbled]], -1, (0, 255, 0), 3)
 
                 real_results.append({
-                    "question_number": current_q,
+                    "question_number": current_question_num,
                     "marked_answer": choice,
                     "is_correct": False 
                 })
-                current_q += 1
-
-        process_column(left_cnts, 1)
-        process_column(right_cnts, 1 + len(real_results))
+                current_question_num += 1
+                processed_count += 1
 
         # Save Debug Image
         filename = os.path.basename(image_path)
