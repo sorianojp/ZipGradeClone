@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->date('date')->nullable();
-            $table->string('omr_code')->default('20'); // '20', '50', '100' sheet type
+            $table->string('omr_code')->default('25'); // '25', '50' sheet type
             $table->timestamps();
         });
     }

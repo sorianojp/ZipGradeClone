@@ -25,9 +25,8 @@ class ExamSeeder extends Seeder
         }
 
         $configs = [
-            ['items' => 20, 'name' => '20 Item Quiz'],
+            ['items' => 25, 'name' => '25 Item Quiz'],
             ['items' => 50, 'name' => '50 Item Midterm'],
-            ['items' => 100, 'name' => '100 Item Final'],
         ];
 
         foreach ($configs as $config) {

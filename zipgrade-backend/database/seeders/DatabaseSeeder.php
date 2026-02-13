@@ -3,8 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use App\Models\Classroom;
-use App\Models\Student;
+
 use App\Models\Exam;
 use App\Models\Question;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -29,17 +28,8 @@ class DatabaseSeeder extends Seeder
 
         $this->command->info('User: teacher@example.com / password');
 
-        // 2. Create Classroom
-        $classroom = Classroom::firstOrCreate(
-            ['name' => 'Math 101', 'user_id' => $user->id],
-            ['section' => 'A']
-        );
-
-        // 3. Create Students and attach to Classroom
-        $students = Student::factory(5)->create();
-        $classroom->students()->attach($students);
-
-        $this->command->info('Classroom "Math 101" created with 5 students.');
+        // 2. Mock some data if needed, or just leave user only.
+        // simplified app has no classrooms/students tables.
 
         // 4. Run Exam Seeder
         $this->call(ExamSeeder::class);

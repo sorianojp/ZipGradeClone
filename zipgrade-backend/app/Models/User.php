@@ -48,10 +48,7 @@ class User extends Authenticatable
         ];
     }
 
-    public function classrooms()
-    {
-        return $this->hasMany(Classroom::class);
-    }
+
 
     public function exams()
     {

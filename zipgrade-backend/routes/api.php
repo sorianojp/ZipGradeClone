@@ -3,8 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\ClassroomController;
-use App\Http\Controllers\StudentController;
+
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\ResultController;
 
@@ -15,8 +14,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
 
-    Route::apiResource('classrooms', ClassroomController::class);
-    Route::apiResource('students', StudentController::class);
+    // Route::apiResource('classrooms', ClassroomController::class);
+    // Route::apiResource('students', StudentController::class);
     Route::apiResource('exams', ExamController::class);
     Route::post('exams/{exam}/questions', [ExamController::class, 'addQuestions']);
     Route::apiResource('results', ResultController::class);

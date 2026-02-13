@@ -57,12 +57,15 @@
         .sheet {
             position: absolute;
             top: 45mm;
-            left: 20mm;
-            right: 20mm;
+            /* Below top markers */
+            left: 15mm;
+            right: 15mm;
             bottom: 40mm;
+            /* Above bottom markers */
             border: 5px solid #000;
             padding: 20px;
             box-sizing: border-box;
+            /* Ensure padding doesn't affect width */
         }
 
         .header {
@@ -101,45 +104,49 @@
         }
 
         .questions {
-            column-count: 2;
-            column-gap: 40px;
+            column-count: 3;
+            /* changed from 2 to 3 */
+            column-gap: 60px;
+            /* adjusted gap for OMR threshold > 40 */
             height: 100%;
-            /* Fill available space */
         }
 
         .question {
-            margin-bottom: 5px;
-            /* Tighter margin for 50 items */
+            margin-bottom: 8px;
+            /* matched 25-item sheet */
             display: flex;
             align-items: center;
             break-inside: avoid;
+            /* Prevent splitting across columns */
         }
 
         .q-num {
             font-weight: bold;
             width: 25px;
             margin-right: 8px;
-            font-size: 12px;
-            /* Slightly smaller font */
+            font-size: 14px;
+            /* matched 25-item sheet */
             text-align: right;
         }
 
         .bubbles {
             display: flex;
-            gap: 6px;
-            /* Tighter gap */
+            gap: 8px;
+            /* matched 25-item sheet */
         }
 
         .bubble {
-            width: 20px;
-            /* Smaller bubbles */
-            height: 20px;
+            width: 22px;
+            /* matched 25-item sheet */
+            height: 22px;
+            /* matched 25-item sheet */
             border-radius: 50%;
             border: 1px solid #000;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
+            font-size: 11px;
+            /* matched 25-item sheet */
             font-weight: bold;
         }
 
@@ -158,6 +165,7 @@
                 box-shadow: none;
             }
 
+            /* Ensure background colors print if user settings allow, though markers are black so usually fine */
             .marker {
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;

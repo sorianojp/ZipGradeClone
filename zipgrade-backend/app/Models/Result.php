@@ -9,17 +9,14 @@ class Result extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['exam_id', 'student_id', 'percentage', 'total_questions', 'raw_score', 'scan_image_path'];
+    protected $fillable = ['exam_id', 'student_identifier', 'percentage', 'total_questions', 'raw_score', 'scan_image_path'];
 
     public function exam()
     {
         return $this->belongsTo(Exam::class);
     }
 
-    public function student()
-    {
-        return $this->belongsTo(Student::class);
-    }
+
 
     public function studentAnswers()
     {

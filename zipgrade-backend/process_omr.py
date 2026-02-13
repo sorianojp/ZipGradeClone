@@ -76,7 +76,7 @@ def sort_contours(cnts, method="top-to-bottom"):
     # return the list of sorted contours and bounding boxes
     return (cnts, boundingBoxes)
 
-def process_omr(image_path, num_questions=20):
+def process_omr(image_path, num_questions=25):
     try:
         # Load image
         image = cv2.imread(image_path)

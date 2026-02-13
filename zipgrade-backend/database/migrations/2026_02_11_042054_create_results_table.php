@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('results', function (Blueprint $table) {
             $table->id();
             $table->foreignId('exam_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('student_id')->nullable()->constrained()->nullOnDelete(); // Nullable if anonymous scan
-            $table->decimal('score', 5, 2); // Percentage or total points? Let's say percentage for now or calculate on fly. Let's store total points earned.
+            $table->string('student_identifier')->nullable();
+            $table->decimal('percentage', 5, 2);
             $table->integer('total_questions');
-            $table->integer('raw_score'); // Number of correct answers
+            $table->integer('raw_score');
             $table->string('scan_image_path')->nullable();
             $table->timestamps();
         });

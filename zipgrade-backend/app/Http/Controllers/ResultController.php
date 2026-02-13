@@ -17,14 +17,14 @@ class ResultController extends Controller
         // Return results for exams owned by user
         return Result::whereHas('exam', function($query) {
             $query->where('user_id', Auth::id());
-        })->with(['student', 'exam'])->latest()->get();
+        })->with(['exam'])->latest()->get();
     }
 
     public function store(Request $request)
     {
         $request->validate([
             'exam_id' => 'required|exists:exams,id',
-            'student_id' => 'nullable|exists:students,id',
+            'student_identifier' => 'nullable|string',
             // Score fields optional now as they will be calculated
             'score' => 'nullable|numeric',
             'total_questions' => 'required|integer',
@@ -98,7 +98,7 @@ class ResultController extends Controller
 
 
         $result = $exam->results()->create([
-            'student_id' => $request->student_id,
+            'student_identifier' => $request->student_identifier,
             'percentage' => $finalPercentage,
             'total_questions' => $request->total_questions,
             'raw_score' => $rawScore,
@@ -119,6 +119,6 @@ class ResultController extends Controller
     {
         return Result::whereHas('exam', function($query) {
             $query->where('user_id', Auth::id());
-        })->with(['student', 'studentAnswers'])->findOrFail($id);
+        })->with(['studentAnswers'])->findOrFail($id);
     }
 }

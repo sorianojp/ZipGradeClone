@@ -18,7 +18,7 @@ class ExamController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'date' => 'nullable|date',
-            'omr_code' => 'required|in:20,50,100',
+            'omr_code' => 'required|in:25,50',
         ]);
 
         $exam = Auth::user()->exams()->create($request->all());
@@ -38,7 +38,7 @@ class ExamController extends Controller
         $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'date' => 'nullable|date',
-            'omr_code' => 'sometimes|required|in:20,50,100',
+            'omr_code' => 'sometimes|required|in:25,50',
         ]);
 
         $exam->update($request->all());
