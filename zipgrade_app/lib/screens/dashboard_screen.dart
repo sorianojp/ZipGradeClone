@@ -30,9 +30,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Failed to load exams: $e')));
+        if (e.toString().contains('401') ||
+            e.toString().contains('Unauthenticated')) {
+          _logout();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Session expired. Please login again.'),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Failed to load exams: $e')));
+        }
         setState(() => _isLoading = false);
       }
     }

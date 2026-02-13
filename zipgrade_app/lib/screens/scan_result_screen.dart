@@ -7,7 +7,7 @@ class ScanResultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final score = result['score'];
+    final score = result['percentage'];
     final totalQuestions = result['total_questions'];
     final rawScore = result['raw_score'];
     final List<dynamic> answers = result['student_answers'] ?? [];
@@ -24,7 +24,7 @@ class ScanResultScreen extends StatelessWidget {
             child: Column(
               children: [
                 Text(
-                  '${score.toStringAsFixed(1)}%',
+                  '${(score as num).toStringAsFixed(1)}%',
                   style: const TextStyle(
                     fontSize: 48,
                     fontWeight: FontWeight.bold,

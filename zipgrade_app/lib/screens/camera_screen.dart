@@ -30,7 +30,7 @@ class _CameraScreenState extends State<CameraScreen> {
     final cameras = await availableCameras();
     final firstCamera = cameras.first;
 
-    _controller = CameraController(firstCamera, ResolutionPreset.medium);
+    _controller = CameraController(firstCamera, ResolutionPreset.veryHigh);
 
     _initializeControllerFuture = _controller!.initialize();
     if (mounted) setState(() {});
@@ -91,8 +91,8 @@ class _CameraScreenState extends State<CameraScreen> {
 
     // Add Fields
     request.fields['exam_id'] = widget.exam.id.toString();
-    request.fields['score'] =
-        '0'; // Placeholder, will be calculated by server in real app or update later
+    // percentage calculated on server, but field name changed
+    // request.fields['percentage'] = '0';
     request.fields['total_questions'] = widget.exam.omrCode;
     request.fields['raw_score'] = '0';
 
@@ -144,38 +144,96 @@ class _CameraScreenState extends State<CameraScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Scan: ${widget.exam.name}')),
+      backgroundColor: Colors.black,
       body: FutureBuilder<void>(
         future: _initializeControllerFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
+            final size = MediaQuery.of(context).size;
+            var scale = size.aspectRatio * _controller!.value.aspectRatio;
+
+            // to prevent scaling down, invert the value
+            if (scale < 1) scale = 1 / scale;
+
             return Stack(
+              fit: StackFit.expand,
               children: [
-                CameraPreview(_controller!),
-                // Overlay for alignment
+                Transform.scale(
+                  scale: scale,
+                  child: Center(child: CameraPreview(_controller!)),
+                ),
+                // Overlay for alignment (Corner Guides)
                 Center(
-                  child: Container(
-                    width: 300,
-                    height: 500,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.green, width: 3),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+                  child: SizedBox(
+                    width: 300, // Fixed width
+                    height:
+                        300 * (297 / 210), // A4 Aspect Ratio height ~ 424.28
+                    child: CustomPaint(painter: ScannerOverlayPainter()),
                   ),
                 ),
+                // Top controls (Back button & Title)
+                Positioned(
+                  top: MediaQuery.of(context).padding.top + 10,
+                  left: 10,
+                  right: 10,
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Scan: ${widget.exam.name}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            shadows: [
+                              Shadow(
+                                offset: Offset(0, 1),
+                                blurRadius: 3.0,
+                                color: Colors.black,
+                              ),
+                            ],
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Loading indicator
                 if (_isProcessing)
                   Container(
                     color: Colors.black54,
                     child: const Center(child: CircularProgressIndicator()),
                   ),
+                // Bottom controls (Capture button)
                 Positioned(
-                  bottom: 30,
+                  bottom: 50,
                   left: 0,
                   right: 0,
                   child: Center(
-                    child: FloatingActionButton(
-                      onPressed: _takePictureAndUpload,
-                      child: const Icon(Icons.camera),
+                    child: GestureDetector(
+                      onTap: _takePictureAndUpload,
+                      child: Container(
+                        height: 80,
+                        width: 80,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 4),
+                          color: Colors.white24,
+                        ),
+                        child: Container(
+                          margin: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -188,4 +246,44 @@ class _CameraScreenState extends State<CameraScreen> {
       ),
     );
   }
+}
+
+// Add this class at the bottom of camera_screen.dart or in a separate file
+class ScannerOverlayPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.green
+      ..strokeWidth = 4
+      ..style = PaintingStyle.stroke;
+
+    final double cornerLength = 40;
+
+    final path = Path();
+
+    // Top-left
+    path.moveTo(0, cornerLength);
+    path.lineTo(0, 0);
+    path.lineTo(cornerLength, 0);
+
+    // Top-right
+    path.moveTo(size.width - cornerLength, 0);
+    path.lineTo(size.width, 0);
+    path.lineTo(size.width, cornerLength);
+
+    // Bottom-right
+    path.moveTo(size.width, size.height - cornerLength);
+    path.lineTo(size.width, size.height);
+    path.lineTo(size.width - cornerLength, size.height);
+
+    // Bottom-left
+    path.moveTo(cornerLength, size.height);
+    path.lineTo(0, size.height);
+    path.lineTo(0, size.height - cornerLength);
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
