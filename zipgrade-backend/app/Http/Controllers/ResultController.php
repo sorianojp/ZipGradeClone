@@ -91,15 +91,15 @@ class ResultController extends Controller
             }
         }
         
-        // Calculate percentage?
+        // Calculate Percentage
         // Assuming total possible points = number of questions * 1 for simplicity
         $totalPossible = $exam->questions()->sum('points');
-        $finalScore = ($totalPossible > 0) ? ($score / $totalPossible) * 100 : 0;
+        $finalPercentage = ($totalPossible > 0) ? ($score / $totalPossible) * 100 : 0;
 
 
         $result = $exam->results()->create([
             'student_id' => $request->student_id,
-            'score' => $finalScore,
+            'percentage' => $finalPercentage,
             'total_questions' => $request->total_questions,
             'raw_score' => $rawScore,
             'scan_image_path' => $imagePath,
